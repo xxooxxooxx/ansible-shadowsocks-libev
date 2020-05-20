@@ -1,6 +1,6 @@
 # ansible-shadowsocks-libev
 
-### Debian 8+/CentOS 7+
+### Debian 8+/CentOS 7+ ansible >2.3
 
 * /etc/ansible/hosts
 ```
