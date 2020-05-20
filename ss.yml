@@ -27,7 +27,7 @@
     - name: installing package
       apt: update_cache=yes name={{ dependencies }} state=latest install_recommends=no
       register: check1
-      when: ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 10 
+      when: ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 8 
     - name: installing package
       block:
         - name: add epel-release
