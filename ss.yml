@@ -1,0 +1,138 @@
+---
+- hosts: ss
+  vars: 
+    ip: "{{ ansible_default_ipv4.address }}"
+    s_port: '7331'
+    passwd: 'passwd@#$'
+    fast_open: 'true'
+    method: 'xchacha20-ietf-poly1305'
+    dependencies:
+      - gettext
+      - build-essential
+      - autoconf
+      - libtool
+      - libpcre3-dev
+      - asciidoc
+      - xmlto
+      - libev-dev
+      - automake
+      - libmbedtls-dev
+      - libc-ares-dev
+      - haveged
+      - openssl
+      - libcap2-bin
+      - git
+    c_dependencies: [gcc, gettext, autoconf, libtool, automake, make, pcre-devel, asciidoc, xmlto, c-ares-devel, libev-devel, libsodium-devel, mbedtls-devel, haveged, git] 
+  tasks: 
+    - name: installing package
+      apt: update_cache=yes name={{ dependencies }} state=latest install_recommends=no
+      register: check1
+      when: ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 10 
+    - name: installing package
+      block:
+        - name: add epel-release
+          yum: name=epel-release state=latest
+        - name: installing c_dependencies
+          yum:
+            name: "{{c_dependencies}}"
+            state: latest
+          register: check2
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version|int >= 7
+    - debug:
+        var: 
+          check1, check2
+    - name: exit
+      fail:
+        msg: OS not suport
+      when: check1.skipped is defined and check2.skipped is defined
+    - name : enables haveged service
+      systemd: name=haveged enabled=yes 
+    - name : starting haveged service
+      systemd: name=haveged state=started 
+    - name: clone libsodium
+      git:
+        repo: https://github.com/jedisct1/libsodium
+        version: stable
+        dest: /tmp/libsodium
+        recursive: yes
+        update: yes
+        force: yes
+      register: libsodium_out
+      when: ansible_distribution == "Debian"
+    - name: debug
+      debug:
+        var: libsodium_out
+    - name: installing libsodium 
+      when: ansible_distribution == "Debian" and libsodium_out.failed == false and libsodium_out.before != libsodium_out.after
+      block:
+        - name: installing libsodium
+          shell: 
+            cmd: ./autogen.sh && ./configure && make && make install
+            chdir: "/tmp/libsodium" 
+        - name: 
+          command: 
+            argv: ldconfig
+      rescue:
+        - file:
+            path: "/tmp/libsodium"
+            state: absent 
+        - fail:
+    - name: clone shadowsocks
+      git:
+        repo: https://github.com/shadowsocks/shadowsocks-libev.git
+        dest: /tmp/shadowsocks-libev
+        recursive: yes
+        update: yes
+        force: yes
+      register: shadowsocks_out
+    - name: installing shadowsocks-libev
+      when: shadowsocks_out.failed == false and shadowsocks_out.before != shadowsocks_out.after
+      block:
+        - name: installing shadowsocks-libev
+          shell: 
+            cmd: git submodule update --init --recursive && ./autogen.sh && ./configure && make && make install
+            chdir: "/tmp/shadowsocks-libev"
+      rescue:
+        - file:
+            path: "/tmp/shadowsocks-libev"
+            state: absent
+        - fail:
+    - name: debug
+      debug:
+        var: 
+          shadowsocks_out
+    - name: systemd_init 
+      template:
+        src: shadowsocks.j2
+        dest: /lib/systemd/system/shadowsocks.service
+      notify:
+        - reload
+    - meta: flush_handlers
+    - sysctl:
+        reload: yes
+        name: net.ipv4.tcp_fastopen
+        value: "3"
+      when: fast_open == "true"
+    - sysctl:
+        reload: yes
+        name: net.ipv4.tcp_fastopen
+        value: "1"
+      when: fast_open == "false"
+    - file: path=/etc/shadowsocks state=directory mode=0755
+    - name: config
+      template:
+        src: config.j2
+        dest: /etc/shadowsocks/config.json
+      notify:
+        - enservice
+        - reservice
+    - debug:
+        var: 
+          passwd
+  handlers:
+    - name: enservice
+      systemd: name=shadowsocks enabled=yes
+    - name: reservice
+      systemd: name=shadowsocks state=restarted
+    - name: reload
+      systemd: daemon_reload=yes
