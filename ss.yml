@@ -2,10 +2,15 @@
 - hosts: ss
   vars: 
     ip: "{{ ansible_default_ipv4.address }}"
+################################################
     s_port: '7331'
     passwd: 'passwd@#$'
     fast_open: 'true'
     method: 'xchacha20-ietf-poly1305'
+    fail2ban: 'true'
+################################################
+    fail2ban_package: 
+      - fail2ban
     dependencies:
       - gettext
       - build-essential
@@ -24,6 +29,16 @@
       - git
     c_dependencies: [gcc, gettext, autoconf, libtool, automake, make, pcre-devel, asciidoc, xmlto, c-ares-devel, libev-devel, libsodium-devel, mbedtls-devel, haveged, git] 
   tasks: 
+    - set_fact:
+        dependencies: "{{ dependencies + fail2ban_package }}"
+      when: fail2ban == "true" and ansible_distribution == "Debian"
+    - set_fact:
+        c_dependencies: "{{ c_dependencies + fail2ban_package }}"
+      when: fail2ban == "true" and ansible_distribution == "CentOS"
+#    - debug:
+#        var:
+#          dependencies, c_dependencies
+#    - fail:
     - name: installing package
       apt: update_cache=yes name={{ dependencies }} state=latest install_recommends=no
       register: check1
@@ -124,15 +139,52 @@
         src: config.j2
         dest: /etc/shadowsocks/config.json
       notify:
-        - enservice
-        - reservice
+        - ss_enservice
+        - ss_reservice
+    - meta: flush_handlers
+    - name: config fail2ban 
+      block:
+        - set_fact:
+            p_logs: "/var/log/messages"
+          when: ansible_distribution == "CentOS"
+        - set_fact:
+            p_logs: "/var/log/syslog"
+          when: ansible_distribution == "Debian"
+        - copy:
+            src: "shadowsocks.conf" 
+            dest: "/etc/fail2ban/filter.d/shadowsocks.conf"
+          notify:
+            - fb_enservice
+            - fb_reservice
+        - blockinfile:
+            path: /etc/fail2ban/jail.local
+            block: |
+              [shadowsocks]
+              enabled = true
+              port    = {{ s_port }}
+              logpath  = {{ p_logs }}
+              maxretry = 5
+              bantime = 3600
+              findtime = 3600
+            state: present
+            marker: "# {mark} C_FAIL2BAN"
+            insertafter: EOF
+            create: yes
+          notify: 
+            - fb_enservice
+            - fb_reservice
+      when: fail2ban == "true"
     - debug:
         var: 
           passwd
   handlers:
-    - name: enservice
+    - name: ss_enservice
       systemd: name=shadowsocks enabled=yes
-    - name: reservice
+    - name: ss_reservice
       systemd: name=shadowsocks state=restarted
     - name: reload
       systemd: daemon_reload=yes
+    - name: fb_enservice
+      systemd: name=fail2ban enabled=yes
+    - name: fb_reservice
+      systemd: name=fail2ban state=restarted
