@@ -60,10 +60,8 @@
       fail:
         msg: OS not suport
       when: check1.skipped is defined and check2.skipped is defined
-    - name : enables haveged service
-      systemd: name=haveged enabled=yes 
     - name : starting haveged service
-      systemd: name=haveged state=started 
+      systemd: name=haveged state=started enabled=yes
     - name: clone libsodium
       git:
         repo: https://github.com/jedisct1/libsodium
@@ -139,8 +137,7 @@
         src: config.j2
         dest: /etc/shadowsocks/config.json
       notify:
-        - ss_enservice
-        - ss_reservice
+        - ss_service
     - meta: flush_handlers
     - name: config fail2ban 
       block:
@@ -154,8 +151,7 @@
             src: "shadowsocks.conf" 
             dest: "/etc/fail2ban/filter.d/shadowsocks.conf"
           notify:
-            - fb_enservice
-            - fb_reservice
+            - fb_service
         - blockinfile:
             path: /etc/fail2ban/jail.local
             block: |
@@ -171,20 +167,15 @@
             insertafter: EOF
             create: yes
           notify: 
-            - fb_enservice
-            - fb_reservice
+            - fb_service
       when: fail2ban == "true"
     - debug:
         var: 
           passwd
   handlers:
-    - name: ss_enservice
-      systemd: name=shadowsocks enabled=yes
-    - name: ss_reservice
-      systemd: name=shadowsocks state=restarted
+    - name: ss_service
+      systemd: name=shadowsocks state=restarted enabled=yes
     - name: reload
       systemd: daemon_reload=yes
-    - name: fb_enservice
-      systemd: name=fail2ban enabled=yes
-    - name: fb_reservice
-      systemd: name=fail2ban state=restarted
+    - name: fb_service
+      systemd: name=fail2ban state=restarted enabled=yes
