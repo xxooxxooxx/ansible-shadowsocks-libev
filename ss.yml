@@ -58,7 +58,7 @@
           check1, check2
     - name: exit
       fail:
-        msg: OS not suport
+        msg: OS not support
       when: check1.skipped is defined and check2.skipped is defined
     - name : starting haveged service
       systemd: name=haveged state=started enabled=yes
