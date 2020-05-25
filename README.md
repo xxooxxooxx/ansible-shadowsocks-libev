@@ -1,4 +1,5 @@
 # ansible-shadowsocks-libev
+[![Build Status](https://travis-ci.org/xxooxxooxx/ansible-shadowsocks-libev.svg?branch=master)](https://travis-ci.org/xxooxxooxx/ansible-shadowsocks-libev)
 
 ### Debian 8+/CentOS 7+ ansible >2.3
 
