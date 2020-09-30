@@ -80,7 +80,7 @@
       block:
         - name: installing libsodium
           shell: 
-            cmd: ./autogen.sh && ./configure && make && make install
+            cmd: ./configure && make && make install
             chdir: "/tmp/libsodium" 
         - name: 
           command: 
