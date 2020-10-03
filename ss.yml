@@ -6,7 +6,7 @@
     s_port: '7331'
     passwd: 'passwd@#$'
     fast_open: 'true'
-    method: 'xchacha20-ietf-poly1305'
+    method: 'chacha20-ietf-poly1305'
     fail2ban: 'true'
 ################################################
     fail2ban_package: 
