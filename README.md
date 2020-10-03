@@ -2,7 +2,17 @@
 [![Build Status](https://travis-ci.org/xxooxxooxx/ansible-shadowsocks-libev.svg?branch=master)](https://travis-ci.org/xxooxxooxx/ansible-shadowsocks-libev)
 
 ### Debian 8+/CentOS 7+ ansible 2.3+
+* init
+```
+ssh-keygen -t ed25519 -C "name"
+ssh-keygen -E md5 -lf ~/.ssh/ansible_id_ed25519.pub
+ssh-copy-id -i ~/.ssh/ansible_id_ed25519.pub root@ip
 
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/ansible_id_ed25519
+ssh-add -l -E md5
+
+```
 * /etc/ansible/hosts
 ```
 [ss]
