@@ -27,7 +27,8 @@
       - openssl
       - libcap2-bin
       - git
-    c_dependencies: [gcc, gettext, autoconf, libtool, automake, make, pcre-devel, asciidoc, xmlto, c-ares-devel, libev-devel, libsodium-devel, mbedtls-devel, haveged, git] 
+      - linux-headers-{{ ansible_kernel }}
+    c_dependencies: [gcc, gettext, autoconf, libtool, automake, make, pcre-devel, asciidoc, xmlto, c-ares-devel, libev-devel, libsodium-devel, mbedtls-devel, haveged, git, "kernel-devel-{{ ansible_kernel }}"] 
   tasks: 
     - set_fact:
         dependencies: "{{ dependencies + fail2ban_package }}"
