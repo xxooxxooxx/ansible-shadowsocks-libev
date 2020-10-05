@@ -41,7 +41,7 @@
 #          dependencies, c_dependencies
 #    - fail:
     - name: installing package
-      apt: update_cache=yes name={{ dependencies }} state=latest install_recommends=no
+      apt: upgrade=yes update_cache=yes name={{ dependencies }} state=latest install_recommends=no
       register: check1
       when: ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 8 
     - name: installing package
