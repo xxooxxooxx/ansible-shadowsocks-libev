@@ -5,7 +5,7 @@
 ################################################
     s_port: '7331'
     passwd: 'passwd@#$'
-    fast_open: 'true'
+    fast_open: 'false'
     method: 'chacha20-ietf-poly1305'
     fail2ban: 'true'
 ################################################
@@ -43,7 +43,8 @@
 #    - fail:
     - name: installing package
       block:
-        - apt: upgrade=yes update_cache=yes state=latest autoremove=yes
+        - apt: upgrade=yes update_cache=yes state=latest
+        - apt: autoremove=yes
         - apt: update_cache=yes name={{ dependencies }} state=latest install_recommends=no
           register: check1
       when: ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 8 
