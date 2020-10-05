@@ -27,6 +27,7 @@
       - openssl
       - libcap2-bin
       - git
+      - libsodium-dev
       - linux-headers-{{ ansible_kernel }}
     c_dependencies: [gcc, gettext, autoconf, libtool, automake, make, pcre-devel, asciidoc, xmlto, c-ares-devel, libev-devel, libsodium-devel, mbedtls-devel, haveged, git, "kernel-devel-{{ ansible_kernel }}"] 
   tasks: 
@@ -41,8 +42,10 @@
 #          dependencies, c_dependencies
 #    - fail:
     - name: installing package
-      apt: upgrade=yes update_cache=yes name={{ dependencies }} state=latest install_recommends=no
-      register: check1
+      block:
+        - apt: upgrade=yes update_cache=yes state=latest autoremove=yes
+        - apt: update_cache=yes name={{ dependencies }} state=latest install_recommends=no
+          register: check1
       when: ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 8 
     - name: installing package
       block:
@@ -63,34 +66,6 @@
       when: check1.skipped is defined and check2.skipped is defined
     - name : starting haveged service
       systemd: name=haveged state=started enabled=yes
-    - name: clone libsodium
-      git:
-        repo: https://github.com/jedisct1/libsodium
-        version: stable
-        dest: /tmp/libsodium
-        recursive: yes
-        update: yes
-        force: yes
-      register: libsodium_out
-      when: ansible_distribution == "Debian"
-    - name: debug
-      debug:
-        var: libsodium_out
-    - name: installing libsodium 
-      when: ansible_distribution == "Debian" and libsodium_out.failed == false and libsodium_out.before != libsodium_out.after
-      block:
-        - name: installing libsodium
-          shell: 
-            cmd: ./configure && make && make install
-            chdir: "/tmp/libsodium" 
-        - name: 
-          command: 
-            argv: ldconfig
-      rescue:
-        - file:
-            path: "/tmp/libsodium"
-            state: absent 
-        - fail:
     - name: clone shadowsocks
       git:
         repo: https://github.com/shadowsocks/shadowsocks-libev.git
