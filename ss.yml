@@ -51,7 +51,7 @@
     - name: installing package
       block:
         - name: update
-          yum: update_only=yes
+          yum: name=* state=latest
         - name: add epel-release
           yum: name=epel-release state=latest
         - name: installing c_dependencies
