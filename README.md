@@ -16,7 +16,9 @@ ssh-add -l -E md5
 * /etc/ansible/hosts
 ```
 [ss]
-1.2.3.4 ansible_ssh_private_key_file=/root/.ssh/ansible_id_ed25519
-#5.6.7.8 (CentOS 8)
-5.6.7.8:99 ansible_python_interpreter=/usr/bin/python3 ansible_ssh_pass='2Hc?5!F4JSeU1zzk'
+#ssh-agent
+1.2.3.4 ansible_user=root
+5.6.7.8 ansible_user=root ansible_ssh_private_key_file=/root/.ssh/ansible_id_ed25519
+#CentOS 8
+9.10.11.12:99 ansible_python_interpreter=/usr/bin/python3 ansible_user=root ansible_ssh_pass='2Hc?5!F4JSeU1zzk'
 ```
